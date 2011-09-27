@@ -1,0 +1,65 @@
+Dungeon Game v. 0.1
+
+General info
+------------
+
+It is a text-based FPS dungeon-exploration game being written in Python 2.7.1 with curses module.
+It is in a very early version, but the main features will be:
+
+- Text-based gaming, so you can play without graphics in a 80x24 terminal screen
+- Mostly first person experience, along with top-down view on the map. So it is going to be like FPS version of Nethack
+- Dungeons, treasures, chests, monsters, skeletons, etc. Not only on the map but in ascii art in first person view too.
+- Different textures of walls, floor, ceiling in different levels/locations
+- Maybe color version of these
+- Some kind of AI
+- Maybe multiplayer
+- Maybe inventory and character generation
+- Everything else that is awesome
+
+Have to say that i haven't decided in which setting it will be. Will it be space corridors or stony rocky grimy dungeons, or both :)
+
+What's new
+----------
+
+- Drawing functions for walls, ceiling and floor.
+- Moving player around map with arrow keys
+- Loading map from text file
+
+Hardware & Software requirements
+--------------------------------
+
+Any working hardware should be sufficient =)
+You need Python 2.6+ and a terminal to run the game
+
+Installation & Run
+------------------
+
+- Open terminal
+- Move to the directory with the game (required to load a map)
+- Type in terminal: 
+$ python dungeon.py
+- Exit program with escape key (not with Control+C)
+
+Controls:
+
+Arrow keys - move around map
+Esc - exit
+
+Known problems
+--------------
+
+- Doesn't run on Mac with python 2.7, but reported to run on 2.6
+- On crash exit, your terminal window can be buggy (caused by curses) - you can open new tab/window.
+- Map loads only if you stand in the game folder
+
+Changelog
+---------
+
+v. 0.1 - first version.
+
+Contacts
+--------
+
+Contact me: Alexander Orlov <alex.orlov7@gmail.com>
+
+27.09.2011
