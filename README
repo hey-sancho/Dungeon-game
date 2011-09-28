@@ -50,7 +50,6 @@ Known problems
 
 - Doesn't run on Mac with python 2.7, but reported to run on 2.6
 - On crash exit, your terminal window can be buggy (caused by curses) - you can open new tab/window.
-- Map loads only if you stand in the game folder
 
 Changelog
 ---------

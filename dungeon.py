@@ -1,29 +1,28 @@
 #! /usr/bin/env python
 # -*- coding: utf8 -*-
 import sys, curses, shutil, ConfigParser
+from os import path
 
-#Initialization
+#-----Curses Initialization-----
 stdscr = curses.initscr()
 curses.noecho()
 curses.cbreak()
 curses.curs_set(0)
 stdscr.keypad(1)
 
-#Brushes
+#-----Brushes-----
 brush_top='._\'_'
 brush_floor='nmmn'
 brush_wall='|'
 
-#Player-related data
+#-----Player-related data-----
 player_name='Player'
 savefile=player_name+'.sav'
 player_x = 1
 player_y = 1
 player_d = 2
-#player_char = 'V' #view
-#player_pos = player_x, player_y, player_d
 
-#Draw main window
+#-----Draw first person view window-----
 win_begin_x = 0
 win_begin_y = 0
 win_height = 24
@@ -32,7 +31,7 @@ win = curses.newwin(win_height, win_width, win_begin_y, win_begin_x)
 win.box(0,0)
 win.immedok(1)
 
-#Draw stats window
+#-----Draw stats panel-----
 stats_begin_x = 62
 stats_begin_y = 0
 stats_height = 15
@@ -41,7 +40,7 @@ stats = curses.newwin(stats_height, stats_width, stats_begin_y, stats_begin_x)
 stats.box(0,0)
 stats.immedok(1)
 
-#Draw map
+#-----Draw map-----
 OFFSET = 6
 mapsize = 64
 map_char = '.'
@@ -62,11 +61,12 @@ def center_view(player_axis_value, scrmap_begin_axis, scrmap_end_axis):
 
 #TODO: make a border of 3-5 # around map to avoid bugs with render\or map refresh
 def load_map(mapfile):
-    shutil.copy(mapfile,savefile)
+    scriptpath=path.abspath(path.dirname(sys.argv[0]))+'/'
+    shutil.copy(scriptpath+mapfile,scriptpath+savefile)
     config = ConfigParser.ConfigParser()
-    config.read(savefile)
+    config.read(scriptpath+savefile)
     player_pos = config.get("Player", "player_x"), config.get("Player", "player_y"), config.get("Player", "player_d") 
-    savemap=open(savefile,'r')
+    savemap=open(scriptpath+savefile,'r')
     lines=savemap.readlines()
     for y in range(OFFSET, len(lines)):
         try: scrmap.addstr(y-OFFSET,0,lines[y])
@@ -268,6 +268,10 @@ def get_player_char(direction):
     charlist=['^','>','v','<']
     return charlist[direction]
 
+def get_direction_name(direction):
+    charlist=['North','East ','South','West ']
+    return charlist[direction]
+
 def turn_player(clockwise):
     global player_x; global player_y; global player_d
     
@@ -307,11 +311,6 @@ def draw_player_pos(new_x, new_y, player_char):
     scrmap.addch(new_y, new_x, player_char) #put player char
     player_x, player_y = new_x, new_y   #change player_pos
     
-#TODO: make stats look pretty :3
-def update_stats():
-    stats.addstr(1,1,"Position:")
-    stats.addstr(1,11, '%s %s %s' % (player_x, player_y, player_d))
-
 #TODO: Maybe change the key to exit, currently - escape
 def get_key(key):
     global player_d
@@ -331,13 +330,19 @@ def get_key(key):
         curses.endwin()
         sys.exit(0)
     
+#TODO: make stats look pretty :3
+def update_stats():
+    stats.addstr(1,1,"Position:")
+    stats.addstr(2,1, '%s %s %s' % (player_x, player_y, get_direction_name(player_d)))
+        
 #-----MAIN PROGRAM-----
 
-#TODO: make refresh work correctly. stdscr grabs keys correctly, but doesn't refresh win at start
 load_map('level1.map')
+curses.ungetch(10) #make screen magically appear =)
+draw_player_pos(player_x, player_y, get_player_char(player_d)) #draw player on the map
 while 1:
     key=stdscr.getch()
-    stats.addstr(2,1,'keycode: '+str(key)) 
+    stats.addstr(3,1,'keycode: '+str(key)+'  ')
     get_key(key)
     scrmap.refresh(center_view(player_y, scrmap_begin_y, scrmap_end_y),
                    center_view(player_x, scrmap_begin_x, scrmap_end_x),
