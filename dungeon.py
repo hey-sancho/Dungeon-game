@@ -16,7 +16,7 @@ brush_floor='nmmn'
 brush_wall='|'
 
 #-----Player-related data-----
-player_name='Player'
+player_name='Adventurer'
 savefile=player_name+'.sav'
 player_x = 1
 player_y = 1
@@ -48,16 +48,8 @@ scrmap_begin_x = 62
 scrmap_begin_y = 15
 scrmap_end_x = 78
 scrmap_end_y = 22
-#map size is 8x17
+#map size is y=8 x=17
 scrmap = curses.newpad(mapsize, mapsize)
-
-#TODO: Doesn't work, should scroll map, keeping the player in the center
-def center_view(player_axis_value, scrmap_begin_axis, scrmap_end_axis):
-    value=0
-    a=(player_axis_value-(scrmap_end_axis-scrmap_begin_axis+1))/2
-    if a>0:
-        value=a
-    return value
 
 #TODO: make a border of 3-5 # around map to avoid bugs with render\or map refresh
 def load_map(mapfile):
@@ -71,9 +63,7 @@ def load_map(mapfile):
     for y in range(OFFSET, len(lines)):
         try: scrmap.addstr(y-OFFSET,0,lines[y])
         except curses.error: pass
-    scrmap.refresh(center_view(player_y, scrmap_begin_y, scrmap_end_y),
-                   center_view(player_x, scrmap_begin_x, scrmap_end_x),
-                   scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
+    scrmap.refresh(player_y-4,player_x-8, scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
 
 #-----DRAWING FUNCTIONS-----
 # Wall layers:
@@ -332,8 +322,9 @@ def get_key(key):
     
 #TODO: make stats look pretty :3
 def update_stats():
-    stats.addstr(1,1,"Position:")
-    stats.addstr(2,1, '%s %s %s' % (player_x, player_y, get_direction_name(player_d)))
+    stats.addstr(1,1, player_name)
+    stats.addstr(2,1,"Position:")
+    stats.addstr(3,1, '%s %s %s' % (player_x, player_y, get_direction_name(player_d)))
         
 #-----MAIN PROGRAM-----
 
@@ -342,11 +333,9 @@ curses.ungetch(10) #make screen magically appear =)
 draw_player_pos(player_x, player_y, get_player_char(player_d)) #draw player on the map
 while 1:
     key=stdscr.getch()
-    stats.addstr(3,1,'keycode: '+str(key)+'  ')
+    stats.addstr(4,1,'keycode: '+str(key)+'  ')
     get_key(key)
-    scrmap.refresh(center_view(player_y, scrmap_begin_y, scrmap_end_y),
-                   center_view(player_x, scrmap_begin_x, scrmap_end_x),
-                   scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
+    scrmap.refresh(player_y-4,player_x-8, scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
     update_stats()
     draw_cell(0,0,1) 
 
