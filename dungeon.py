@@ -52,19 +52,22 @@ scrmap_end_y = 22
 scrmap = curses.newpad(mapsize, mapsize)
 
 def load_map(mapfile):
-    scriptpath=path.abspath(path.dirname(sys.argv[0]))+'/'
-    shutil.copy(scriptpath+mapfile,scriptpath+savefile)
-    config = ConfigParser.ConfigParser()
+    global player_x; global player_y; global player_d;
+    scriptpath=path.abspath(path.dirname(sys.argv[0]))+'/' 
+    shutil.copy(scriptpath+mapfile,scriptpath+savefile) #copy map as savefile
+    config = ConfigParser.ConfigParser()    #read coordinates from mapfile
     config.read(scriptpath+savefile)
-    player_pos = config.get("Player", "player_x"), config.get("Player", "player_y"), config.get("Player", "player_d") 
+    player_x = config.getint("Player", "player_x")
+    player_y = config.getint("Player", "player_y")
+    player_d = config.getint("Player", "player_d") 
     savemap=open(scriptpath+savefile,'r')
     lines=savemap.readlines()
-    for y in range(OFFSET, len(lines)):
+    for y in range(OFFSET, len(lines)): #copy mapfile content to map, OFFSET is line in file where map starts
         try: scrmap.addstr(y-OFFSET,0,lines[y])
         except curses.error: pass
-    scrmap.refresh(player_y-4,player_x-8, scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
-
-#TODO: '-1 layer' -the most far walls
+    savemap.close()
+    
+#TODO: create '-1 layer' for the most far walls
 #-----DRAWING FUNCTIONS-----
 # Wall layers:
 # 0 - the furthest walls
