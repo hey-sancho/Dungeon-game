@@ -51,7 +51,6 @@ scrmap_end_y = 22
 #map size is y=8 x=17
 scrmap = curses.newpad(mapsize, mapsize)
 
-#TODO: make a border of 3-5 # around map to avoid bugs with render\or map refresh
 def load_map(mapfile):
     scriptpath=path.abspath(path.dirname(sys.argv[0]))+'/'
     shutil.copy(scriptpath+mapfile,scriptpath+savefile)
@@ -65,6 +64,7 @@ def load_map(mapfile):
         except curses.error: pass
     scrmap.refresh(player_y-4,player_x-8, scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
 
+#TODO: '-1 layer' -the most far walls
 #-----DRAWING FUNCTIONS-----
 # Wall layers:
 # 0 - the furthest walls
@@ -72,20 +72,24 @@ def load_map(mapfile):
 # 2 - nearest walls (left, right)
     
 def draw_top_bottom():
-    for x in xrange(1, 11):
-        win.addnstr(x,1,brush_top*(win_width-2),(win_width-2))
-    for x in xrange(1, 10):        
-        win.addnstr(win_height-x-1,1,brush_floor*(win_width-2),(win_width-2))
+    for y in xrange(1, 11):
+        win.addnstr(y,1,brush_top*(win_width-2),(win_width-2))
+    for y in xrange(3):
+        win.addnstr(11+y,1,' '*(win_width-2),(win_width-2))
+    for y in xrange(1, 10):
+        win.addnstr(win_height-y-1,1,brush_floor*(win_width-2),(win_width-2))
 
 def draw_0_front(pos):  #0,1,2,3,4; 2 <-center
     right=0
     width=12
-    if pos > 2:        
-        right=1
-    elif pos==2:
-        width=13
-    for y in xrange(7):        
-        win.addstr(9+y,12*pos+right,brush_wall*width)   #size 7x12, 7x13 -center
+    if pos in xrange(5):
+        if pos > 2:        
+            right=1
+        elif pos==2:
+            width=13
+        for y in xrange(7):        
+            win.addstr(9+y,12*pos+right,brush_wall*width)   #size 7x12, 7x13 -center
+    else: pass
 
 def draw_0_left(pos):   #left -> 0,1,2 <-center; THANKS DEN! =)
     x=12*pos
@@ -134,18 +138,18 @@ def draw_0_right(pos):   #right-> 0,1,2 <-center
             else:    
                 win.addstr(10+y,x-4,brush_wall*4)
 
-def draw_1_front(pos): # 0,1,2; 1 <-center
+def draw_1_front(pos): #0,1,2; 1 <-center
     if pos==0:
         for y in xrange(11):
             win.addstr(7+y,1,brush_wall*15)
     elif pos==1:
         for y in xrange(11):
             win.addstr(7+y,16,brush_wall*29)
-    else:
+    elif pos==2:
         for y in xrange(11):
             win.addstr(7+y,45,brush_wall*15)
         
-def draw_1_left(pos): # left-> 0,1 <-center
+def draw_1_left(pos): #left-> 0,1 <-center
     if pos==0:
         for y in xrange(11):
             if y in (0,10):
@@ -182,7 +186,7 @@ def draw_1_right(pos): #right-> 0,1 <-center
             else:
                 win.addstr(7+y,x-8,brush_wall*8)
 
-def draw_2_left(): # left wall
+def draw_2_left(): #left wall
     for y in xrange(2,win_height-1):
         if y in (2,22):
             win.addstr(y,1,brush_wall*3)
@@ -209,27 +213,44 @@ def draw_2_right(): #right wall
         else:
             win.addstr(y,x-15,brush_wall*15)
 
+def draw_walls(kx,ky,s1,s2): #kx,ky - the far left corner of the view cone, s1,s2 - for directions
+    for k in xrange(3): #draw layer 0
+        if scrmap.inch(ky+s2*k,kx+s1*k)==ord('#'):
+            draw_0_front(k-1)
+            draw_0_left(k)
+        if scrmap.inch(ky+s2*(6-k),kx+s1*(6-k))==ord('#'):
+            draw_0_front(5-k)
+            draw_0_right(k)
+    if scrmap.inch(ky+s2*3,kx+s1*3)==ord('#'):
+        draw_0_front(2)
+    for k in xrange(2): #draw layer 1
+        if scrmap.inch(ky+s1+s2*(1+k),kx+s1*(1+k)-s2)==ord('#'):
+            draw_1_front(k-1)
+            draw_1_left(k)
+        if scrmap.inch(ky+s1+s2*(5-k),kx+s1*(5-k)-s2)==ord('#'):
+            draw_1_front(3-k)
+            draw_1_right(k)
+    if scrmap.inch(ky+s1+s2*3,kx+s1*3-s2)==ord('#'):
+        draw_1_front(1)
+    if scrmap.inch(ky+s1*2+s2*2,kx+s1*2-s2*2)==ord('#'): #draw layer 2
+        draw_2_left()
+    if scrmap.inch(ky+s1*2+s2*4,kx+s1*4-s2*2)==ord('#'):
+        draw_2_right()
+
 #------VIEW PARSING------
-#TODO: write parsing of the map to render the view in first person
-#View is supposed to be like this:
-# #RAAAAAL#
-# ##RAAAL## 
-# ###R@L###
-# @ - player position
-# R - only right side of wallblock is seen, or unseen (if block exists) 
-# L - same, but left side
-# A - seen, can be everything (front wall or a corridor, etc)
-# # - unseen
-# View is rendered from far to near, drawing a block+it's wall (left or right) if it exists on the map (sides will be redrawn as front walls if next adjacent block exists)
-# Also it parses left walls then right walls, and then front (vertical line from player)
 def parse_cell(x,y,d):
-    pass
-    
-#TODO: Will recieve parameters after cell\view parsing and draw
-def draw_cell(left,right,front):
-    #draw_front(front)
-    #draw_sides(left,right)        
+    if d==0:    #direction - N
+        draw_walls(x-3,y-2,1,0)
+    elif d==1:  #direction - E
+        draw_walls(x+2,y-3,0,1)
+    elif d==2:  #direction - S
+        draw_walls(x+3,y+2,-1,0)
+    elif d==3:  #direction - W
+        draw_walls(x-2,y+3,0,-1)
+        
+def draw_cell(x,y,d):
     draw_top_bottom()
+    parse_cell(x,y,d)
     
 #-----DRAWING FUNCTIONS TESTS-----    
 #    draw_0_front(0)
@@ -327,7 +348,6 @@ def update_stats():
     stats.addstr(3,1, '%s %s %s' % (player_x, player_y, get_direction_name(player_d)))
         
 #-----MAIN PROGRAM-----
-
 load_map('level1.map')
 curses.ungetch(10) #make screen magically appear =)
 draw_player_pos(player_x, player_y, get_player_char(player_d)) #draw player on the map
@@ -336,8 +356,6 @@ while 1:
     stats.addstr(4,1,'keycode: '+str(key)+'  ')
     get_key(key)
     scrmap.refresh(player_y-4,player_x-8, scrmap_begin_y,scrmap_begin_x, scrmap_end_y,scrmap_end_x)
+    draw_cell(player_x,player_y,player_d) 
+    win.box(0,0)
     update_stats()
-    draw_cell(0,0,1) 
-
-#update_stats()
-#win.getch()
